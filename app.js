@@ -45,5 +45,27 @@ $("breathStart").addEventListener("click",()=>{if(breathTimer)clearInterval(brea
 $("exportBtn").addEventListener("click",()=>{const a=document.createElement("a"),u=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:"application/json"}));a.href=u;a.download="reclaim-backup.json";a.click();URL.revokeObjectURL(u)});
 $("importFile").addEventListener("change",async e=>{try{const data=JSON.parse(await e.target.files[0].text());if(!data.plan||!Array.isArray(data.cravings)||!Array.isArray(data.journal))throw Error();state={...structuredClone(blank),...data};saveState();renderPlan();msg("settingsStatus","Backup imported.")}catch{msg("settingsStatus","Invalid backup file.")}e.target.value=""});
 $("clearBtn").addEventListener("click",async()=>{if(confirm("Delete all recovery information saved to your account? This cannot be undone.")){state=structuredClone(blank);saveState();renderPlan();msg("settingsStatus","Your recovery data was cleared.")}});
+
+// Hidden admin shortcut: click the RECLAIM logo five times within 3 seconds.
+(function setupHiddenAdminShortcut(){
+  const logo = document.querySelector(".brand");
+  if (!logo) return;
+  let clicks = 0;
+  let resetTimer;
+  logo.title = "RECLAIM";
+  logo.setAttribute("aria-label", "RECLAIM home");
+  logo.addEventListener("click", (event) => {
+    event.preventDefault();
+    clicks += 1;
+    clearTimeout(resetTimer);
+    if (clicks >= 5) {
+      clicks = 0;
+      location.href = "./reclaim-control-room-7f3a9c.html";
+      return;
+    }
+    resetTimer = setTimeout(() => { clicks = 0; }, 3000);
+  });
+})();
+
 loadLocal();
 if("serviceWorker"in navigator&&location.protocol!=="file:")window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(console.warn));
