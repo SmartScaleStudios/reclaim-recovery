@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b1110">
+  <meta name="description" content="A private recovery and relapse-prevention companion.">
+  <title>RECLAIM — Recovery, one decision at a time</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#dashboard" aria-label="RECLAIM dashboard">
+        <span class="brand-mark">R</span><span>RECLAIM<small>RECOVERY COMPANION</small></span>
+      </a>
+      <div class="profile-chip"><span class="avatar">Y</span><span><b>Your space</b><small>Private on this device</small></span></div>
+      <nav class="nav" aria-label="Main navigation">
+        <button class="nav-link active" data-view="dashboard"><span>⌂</span> Overview</button>
+        <button class="nav-link" data-view="cravings"><span>◉</span> Craving tracker</button>
+        <button class="nav-link" data-view="emergency"><span>✳</span> Urge support <i>NOW</i></button>
+        <button class="nav-link" data-view="journal"><span>▤</span> Journal</button>
+        <button class="nav-link" data-view="insights"><span>⌁</span> Insights</button>
+        <button class="nav-link" data-view="plan"><span>◇</span> Recovery plan</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="privacy-note"><span class="dot"></span><div><b>Your data stays here</b><small>Saved locally in this browser.</small></div></div>
+        <button class="nav-link" data-view="settings"><span>⚙</span> Settings</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu" id="menuBtn" aria-label="Open navigation">☰</button>
+        <div><p class="eyebrow" id="todayLabel">YOUR RECOVERY SPACE</p><h1 id="pageTitle">Overview</h1></div>
+        <button class="button button-quiet install-btn" id="installBtn" hidden>＋ Install app</button>
+      </header>
+
+      <section class="view active" id="view-dashboard">
+        <div class="welcome-row">
+          <div><p class="eyebrow">ONE DAY AT A TIME</p><h2>Progress is built in <em>small decisions.</em></h2><p class="muted">You don't have to solve forever today. Focus on the next helpful choice.</p></div>
+          <button class="button button-primary" data-go="emergency">I’m having an urge <span>↗</span></button>
+        </div>
+        <div class="stats-grid">
+          <article class="stat-card hero-stat"><div class="stat-head"><span>Current streak</span><span class="stat-icon">✦</span></div><strong id="streakValue">0 <small>days</small></strong><p id="streakSub">Your next choice is an opportunity.</p></article>
+          <article class="stat-card"><div class="stat-head"><span>Money saved</span><span class="stat-icon">＄</span></div><strong id="savedValue">$0</strong><p>Based on your estimated daily cost</p></article>
+          <article class="stat-card"><div class="stat-head"><span>Cravings logged</span><span class="stat-icon">◎</span></div><strong id="cravingCount">0</strong><p>Every entry helps reveal a pattern</p></article>
+          <article class="stat-card"><div class="stat-head"><span>Milestone</span><span class="stat-icon">◇</span></div><strong id="milestoneValue">Day 1</strong><p id="milestoneSub">A fresh starting point</p></article>
+        </div>
+        <div class="content-grid">
+          <article class="panel progress-panel">
+            <div class="panel-title"><div><p class="eyebrow">YOUR JOURNEY</p><h3>Recovery progress</h3></div><span class="tag" id="startDateTag">Not started</span></div>
+            <div class="progress-layout"><div class="progress-ring" id="progressRing"><div><strong id="ringDays">0</strong><small> DAYS</small></div></div><div class="progress-copy"><h4 id="progressHeading">Your story starts here.</h4><p class="muted" id="progressText">Set a start date in your recovery plan. Progress is personal; a lapse doesn't erase the work you've done.</p><button class="text-button" data-go="plan">Update recovery plan →</button></div></div>
+            <div class="milestone-track"><div><span>1 day</span><b id="m1">○</b></div><div><span>7 days</span><b id="m7">○</b></div><div><span>30 days</span><b id="m30">○</b></div><div><span>90 days</span><b id="m90">○</b></div></div>
+          </article>
+          <article class="panel checkin-panel">
+            <div class="panel-title"><div><p class="eyebrow">DAILY CHECK-IN</p><h3>How are you arriving today?</h3></div><span class="soft-icon">☀</span></div>
+            <p class="muted">A quick check-in can help you notice what you need.</p>
+            <div class="mood-options" id="moodOptions">
+              <button data-mood="Low" aria-label="Low mood">😔<small>Low</small></button><button data-mood="Okay" aria-label="Okay mood">😐<small>Okay</small></button><button data-mood="Good" aria-label="Good mood">🙂<small>Good</small></button><button data-mood="Great" aria-label="Great mood">😁<small>Great</small></button>
+            </div>
+            <label class="field-label" for="checkinNote">Anything worth noting?</label><textarea id="checkinNote" rows="2" placeholder="Stress, a win, something you need today…"></textarea>
+            <button class="button button-primary full" id="saveCheckin">Save check-in</button><p class="inline-status" id="checkinStatus" role="status"></p>
+          </article>
+        </div>
+        <div class="section-heading"><div><p class="eyebrow">KEEP MOVING FORWARD</p><h3>Your next steps</h3></div></div>
+        <div class="quick-grid">
+          <button class="quick-card" data-go="cravings"><span class="quick-icon">◎</span><b>Log a craving</b><small>Notice the urge without judgment.</small><span class="arrow">↗</span></button>
+          <button class="quick-card" data-go="journal"><span class="quick-icon">▤</span><b>Write a reflection</b><small>Get thoughts out of your head.</small><span class="arrow">↗</span></button>
+          <button class="quick-card" data-go="plan"><span class="quick-icon">◇</span><b>Review your plan</b><small>Reconnect with your reasons.</small><span class="arrow">↗</span></button>
+        </div>
+      </section>
+
+      <section class="view" id="view-cravings">
+        <div class="page-intro"><p class="eyebrow">NOTICE THE PATTERN</p><h2>A craving is a signal, <em>not a command.</em></h2><p class="muted">Log what was happening, how strong the urge felt, and what helped. No judgment.</p></div>
+        <div class="content-grid form-layout">
+          <article class="panel">
+            <h3>Log a craving</h3>
+            <form id="cravingForm">
+              <label class="field-label" for="cravingType">What are you experiencing?</label><select id="cravingType" required><option value="">Choose an addiction / behavior</option><option>Alcohol</option><option>Nicotine / vaping</option><option>Other substances</option><option>Gambling</option><option>Pornography / compulsive sexual behavior</option><option>Social media / gaming</option><option>Food / binge behavior</option><option>Other</option></select>
+              <label class="field-label" for="intensity">Intensity <b id="intensityValue">5 / 10</b></label><input id="intensity" type="range" min="1" max="10" value="5">
+              <label class="field-label" for="trigger">What may have triggered it?</label><select id="trigger"><option>Stress or overwhelm</option><option>Boredom</option><option>Loneliness</option><option>Conflict</option><option>Celebration</option><option>Being around a cue</option><option>Tiredness</option><option>Physical discomfort</option><option>Other / unsure</option></select>
+              <label class="field-label" for="cravingContext">What was happening?</label><textarea id="cravingContext" rows="3" placeholder="Where were you? What were you thinking or feeling?"></textarea>
+              <label class="field-label" for="cravingResponse">What did you do to cope?</label><textarea id="cravingResponse" rows="2" placeholder="Walked, called someone, changed rooms, waited…"></textarea>
+              <button class="button button-primary full" type="submit">Save craving log</button>
+              <p class="inline-status" id="cravingStatus" role="status"></p>
+            </form>
+          </article>
+          <article class="panel">
+            <div class="panel-title"><div><p class="eyebrow">RECENT ENTRIES</p><h3>Your craving history</h3></div><span class="tag" id="cravingTotal">0 entries</span></div>
+            <div class="entry-list" id="cravingList"><div class="empty-state">Your entries will appear here. Logging is a way to learn, not a scorecard.</div></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-emergency">
+        <div class="urge-hero"><div class="urge-orb">✳</div><p class="eyebrow">PAUSE. BREATHE. CHOOSE.</p><h2>You can ride out <em>this moment.</em></h2><p class="muted">You don't need to make a forever decision. Let's create a little space between the urge and your next action.</p></div>
+        <div class="content-grid emergency-grid">
+          <article class="panel breathe-panel"><p class="eyebrow">01 / RESET YOUR BODY</p><h3>60-second breathing reset</h3><p class="muted">Breathe gently. Don't force or hold your breath.</p><div class="breath-circle" id="breathCircle"><span id="breathText">Ready?</span></div><p class="timer" id="breathTimer">01:00</p><button class="button button-primary full" id="breathStart">Start breathing exercise</button></article>
+          <article class="panel"><p class="eyebrow">02 / CHANGE THE NEXT 10 MINUTES</p><h3>Choose one small action</h3><div class="action-list"><button class="action-option">🚶 <span><b>Change your surroundings</b><small>Step outside or move to a shared space.</small></span></button><button class="action-option">📞 <span><b>Contact a safe person</b><small>Send: “I'm having an urge. Can you stay with me?”</small></span></button><button class="action-option">💧 <span><b>Meet a basic need</b><small>Drink water, eat something, or rest.</small></span></button><button class="action-option">🧩 <span><b>Occupy your attention</b><small>Do a simple task with your hands for 10 minutes.</small></span></button></div></article>
+        </div>
+        <article class="panel reasons-panel"><p class="eyebrow">03 / REMEMBER YOUR WHY</p><h3 id="whyHeading">What matters to you beyond the urge?</h3><p id="whyText" class="muted">Add your reasons in your Recovery Plan so they're here when you need them.</p><button class="text-button" data-go="plan">Edit my reasons →</button></article>
+        <p class="safety-copy">If you may be in immediate danger, have overdosed, or have severe withdrawal symptoms, call emergency services. If you are in the U.S. and need substance-use treatment support, call or text SAMHSA at 1-800-662-HELP (4357). For emotional crisis support, call or text 988.</p>
+      </section>
+
+      <section class="view" id="view-journal">
+        <div class="page-intro"><p class="eyebrow">MAKE SPACE TO REFLECT</p><h2>Your thoughts deserve <em>a place to land.</em></h2><p class="muted">Write honestly. This journal is for you, not for judgment.</p></div>
+        <div class="content-grid form-layout">
+          <article class="panel"><h3>New journal entry</h3><form id="journalForm"><label class="field-label" for="journalMood">How are you feeling?</label><select id="journalMood"><option>Reflective</option><option>Hopeful</option><option>Stressed</option><option>Frustrated</option><option>Sad</option><option>Proud</option><option>Unsure</option></select><label class="field-label" for="journalPrompt">Prompt</label><select id="journalPrompt"><option>What is one thing I handled well today?</option><option>What made today difficult?</option><option>What do I need more of right now?</option><option>What is one trigger I noticed?</option><option>What would I tell a friend in my position?</option><option>Free write</option></select><label class="field-label" for="journalText">Your reflection</label><textarea id="journalText" rows="7" required placeholder="Start wherever you are…"></textarea><button class="button button-primary full">Save reflection</button><p class="inline-status" id="journalStatus" role="status"></p></form></article>
+          <article class="panel"><div class="panel-title"><div><p class="eyebrow">YOUR NOTES</p><h3>Past reflections</h3></div></div><div id="journalList" class="entry-list"><div class="empty-state">Your reflections will appear here.</div></div></article>
+        </div>
+      </section>
+
+      <section class="view" id="view-insights">
+        <div class="page-intro"><p class="eyebrow">LEARN, DON'T JUDGE</p><h2>Patterns can point <em>toward change.</em></h2><p class="muted">These simple summaries are based on the entries saved on this device.</p></div>
+        <div class="stats-grid insight-stats"><article class="stat-card"><span class="muted">Total craving logs</span><strong id="insightTotal">0</strong><small>All recorded entries</small></article><article class="stat-card"><span class="muted">Average intensity</span><strong id="avgIntensity">—</strong><small>Out of 10</small></article><article class="stat-card"><span class="muted">Most common trigger</span><strong class="small-strong" id="topTrigger">—</strong><small>From your logs</small></article></div>
+        <div class="content-grid"><article class="panel"><p class="eyebrow">INTENSITY OVER TIME</p><h3>Recent craving intensity</h3><div class="bar-chart" id="intensityChart"><div class="empty-state">Log cravings to see your pattern.</div></div></article><article class="panel"><p class="eyebrow">TRIGGERS</p><h3>What tends to show up?</h3><div id="triggerBreakdown" class="breakdown"><div class="empty-state">Your trigger breakdown will appear here.</div></div></article></div>
+      </section>
+
+      <section class="view" id="view-plan">
+        <div class="page-intro"><p class="eyebrow">MAKE YOUR RECOVERY PERSONAL</p><h2>A plan for the moments <em>that test you.</em></h2><p class="muted">Keep it realistic. You can change it as you learn more about yourself.</p></div>
+        <article class="panel plan-panel"><form id="planForm" class="plan-form">
+          <div class="content-grid"><div><label class="field-label" for="planName">What are you working to change?</label><input id="planName" placeholder="e.g. Stop vaping, reduce gambling…"></div><div><label class="field-label" for="startDate">Recovery start date</label><input id="startDate" type="date"></div></div>
+          <div class="content-grid"><div><label class="field-label" for="dailyCost">Estimated daily money spent ($)</label><input id="dailyCost" type="number" min="0" step="0.01" placeholder="0.00"></div><div><label class="field-label" for="goal">Your next meaningful goal</label><input id="goal" placeholder="e.g. Get through this week"></div></div>
+          <label class="field-label" for="reasons">Why do you want this change?</label><textarea id="reasons" rows="4" placeholder="Your health, relationships, freedom, finances, self-trust…"></textarea>
+          <label class="field-label" for="triggersPlan">My high-risk situations</label><textarea id="triggersPlan" rows="3" placeholder="Times, places, people, emotions, access, routines…"></textarea>
+          <label class="field-label" for="supportPlan">My support people and professional resources</label><textarea id="supportPlan" rows="3" placeholder="Names, phone numbers, counselor, support group…"></textarea>
+          <label class="field-label" for="ifThen">When I notice an urge, I will…</label><textarea id="ifThen" rows="3" placeholder="If I notice ____, then I will ____ before making a decision."></textarea>
+          <button class="button button-primary" type="submit">Save my recovery plan</button><p class="inline-status" id="planStatus" role="status"></p>
+        </form></article>
+      </section>
+
+      <section class="view" id="view-settings">
+        <div class="page-intro"><p class="eyebrow">YOUR SPACE, YOUR CHOICES</p><h2>Settings & <em>privacy.</em></h2><p class="muted">This first version stores data in this browser only. It does not create an account or sync across devices.</p></div>
+        <article class="panel settings-panel"><h3>Data management</h3><p class="muted">Export a backup before clearing browser data or switching devices.</p><div class="settings-actions"><button class="button button-secondary" id="exportBtn">↓ Export my data</button><label class="button button-secondary import-label">↑ Import backup<input type="file" id="importFile" accept="application/json" hidden></label><button class="button button-danger" id="clearBtn">Clear all local data</button></div><p class="inline-status" id="settingsStatus" role="status"></p></article>
+        <article class="panel"><h3>Important health and safety note</h3><p class="muted">RECLAIM is a self-help organizer, not medical care, diagnosis, or a substitute for treatment. Withdrawal from alcohol, benzodiazepines, and some other substances can be dangerous or life-threatening. Speak with a qualified healthcare professional before stopping or changing use if physical dependence is possible. For an overdose, seizure, trouble breathing, severe confusion, or other emergency, call 911 (U.S.) or your local emergency number.</p><p class="muted">A lapse does not erase progress. If a lapse happens, prioritize immediate safety, reconnect with support, and revise the plan without shame.</p></article>
+      </section>
+
+      <footer class="footer"><span>RECLAIM <span class="footer-dot">•</span> Small decisions. Real progress.</span><span>Private local prototype · Not medical care</span></footer>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
