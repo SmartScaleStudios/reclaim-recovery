@@ -68,4 +68,16 @@ $("clearBtn").addEventListener("click",async()=>{if(confirm("Delete all recovery
 })();
 
 loadLocal();
-if("serviceWorker"in navigator&&location.protocol!=="file:")window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(console.warn));
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  window.addEventListener("load", async () => {
+    try {
+      const registration = await navigator.serviceWorker.register("./sw.js", {
+        updateViaCache: "none"
+      });
+      // Ask Chrome to check the service-worker script for a newer release.
+      await registration.update();
+    } catch (error) {
+      console.warn("RECLAIM offline update check failed:", error);
+    }
+  });
+}
