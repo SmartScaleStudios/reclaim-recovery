@@ -1,8 +1,7 @@
 const $=id=>document.getElementById(id);
-const blank={plan:{name:"",startDate:"",dailyCost:0,goal:"",reasons:"",triggers:"",support:"",ifThen:""},cravings:[],journal:[],checkins:[]};
+const blank={plan:{name:"",startDate:"",goal:"",reasons:"",triggers:"",support:"",ifThen:""},cravings:[],journal:[],checkins:[]};
 let state=structuredClone(blank),selectedMood="",breathTimer=null;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const money=n=>new Intl.NumberFormat(undefined,{style:"currency",currency:"USD",maximumFractionDigits:0}).format(n||0);
 function msg(id,t){$(id).textContent=t}
 const DATA_KEY = "reclaim_local_recovery_data";
 function saveState(){localStorage.setItem(DATA_KEY,JSON.stringify(state));renderAll()}
@@ -19,7 +18,7 @@ function loadLocal(){
         if(saved)localStorage.setItem(DATA_KEY,JSON.stringify(saved));
       }
     }
-    state=saved?{...structuredClone(blank),...saved}:structuredClone(blank);
+    state=saved?{...structuredClone(blank),...saved}:structuredClone(blank);if(state.plan)delete state.plan.dailyCost;
   }catch{state=structuredClone(blank)}
   renderPlan();renderAll()
 }
@@ -74,7 +73,7 @@ function updateCheckinAvailability(){
   if(!active) msg("checkinStatus","Start your recovery plan before checking in.");
   else if(done) msg("checkinStatus","You've already completed today's check-in.");
 }
-function renderAll(){updateCheckinAvailability();const d=days(),p=state.plan;$("streakValue").textContent=d+" "+(d===1?"day":"days");$("streakSub").textContent=!planIsStarted()?"Start and save your recovery plan to begin.":checkedInToday()?"Today’s check-in is complete.":"Complete today’s check-in to keep your streak going.";$("savedValue").textContent=money(Math.max(0,d-1)*(Number(p.dailyCost)||0));$("cravingCount").textContent=state.cravings.length;const next=[1,7,30,90].find(x=>d<x)||"90+";$("milestoneValue").textContent=typeof next==="number"?"Day "+next:next+" days";$("milestoneSub").textContent=typeof next==="number"?Math.max(0,next-d)+" days to next milestone":"Milestone reached";$("ringDays").textContent=d;$("progressRing").style.background=`conic-gradient(var(--green) ${Math.min(100,d/90*100)*3.6}deg,#263932 0deg)`;$("progressHeading").textContent=d?`${d} consecutive days of showing up.`:"Your story starts here.";$("progressText").textContent=p.reasons||"Add your reasons in your recovery plan. A lapse does not erase your progress.";[1,7,30,90].forEach(n=>{$("m"+n).textContent=(d>=n?"✓ ":"○ ")+n+" days";});$("whyText").textContent=p.reasons||"Add your reasons in your recovery plan.";
+function renderAll(){updateCheckinAvailability();const d=days(),p=state.plan;$("streakValue").textContent=d+" "+(d===1?"day":"days");$("streakSub").textContent=!planIsStarted()?"Start and save your recovery plan to begin.":checkedInToday()?"Today’s check-in is complete.":"Complete today’s check-in to keep your streak going.";$("cravingCount").textContent=state.cravings.length;const next=[1,7,30,90].find(x=>d<x)||"90+";$("milestoneValue").textContent=typeof next==="number"?"Day "+next:next+" days";$("milestoneSub").textContent=typeof next==="number"?Math.max(0,next-d)+" days to next milestone":"Milestone reached";$("ringDays").textContent=d;$("progressRing").style.background=`conic-gradient(var(--green) ${Math.min(100,d/90*100)*3.6}deg,#263932 0deg)`;$("progressHeading").textContent=d?`${d} consecutive days of showing up.`:"Your story starts here.";$("progressText").textContent=p.reasons||"Add your reasons in your recovery plan. A lapse does not erase your progress.";[1,7,30,90].forEach(n=>{$("m"+n).textContent=(d>=n?"✓ ":"○ ")+n+" days";});$("whyText").textContent=p.reasons||"Add your reasons in your recovery plan.";
 $("cravingList").innerHTML=state.cravings.length?state.cravings.slice(0,40).map(c=>`<div class="entry-item"><b>${esc(c.type)} · ${c.intensity}/10</b><br><small>${new Date(c.date).toLocaleString()} · ${esc(c.trigger)}</small>${c.context?`<p>${esc(c.context)}</p>`:""}${c.response?`<p>Helpful response: ${esc(c.response)}</p>`:""}</div>`).join(""):'<p class="muted">No craving entries yet.</p>';
 $("journalList").innerHTML=state.journal.length?state.journal.slice(0,40).map(j=>`<div class="entry-item"><b>${esc(j.mood)}</b> · <small>${new Date(j.date).toLocaleString()}</small><p>${esc(j.prompt)}<br>${esc(j.text)}</p></div>`).join(""):'<p class="muted">No reflections yet.</p>';
 const list=state.cravings,counts={};list.forEach(c=>counts[c.trigger]=(counts[c.trigger]||0)+1);const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);$("insightTotal").textContent=list.length;$("avgIntensity").textContent=list.length?(list.reduce((a,c)=>a+c.intensity,0)/list.length).toFixed(1):"—";$("topTrigger").textContent=sorted[0]?.[0]||"—";$("triggerBreakdown").innerHTML=sorted.map(([k,v])=>`<p>${esc(k)} — ${v}</p>`).join("")||'<p class="muted">No data yet.</p>';$("intensityChart").innerHTML=list.slice(0,8).reverse().map(c=>`<div class="bar" title="${c.intensity}/10" style="height:${c.intensity*10}%"></div>`).join("")||'<p class="muted">Log cravings to see trends.</p>';
@@ -85,7 +84,7 @@ function localDateInputValue(){
 }
 function renderPlan(){
   const p=state.plan;
-  for(const [id,k] of [["planName","name"],["startDate","startDate"],["dailyCost","dailyCost"],["goal","goal"],["reasons","reasons"],["triggersPlan","triggers"],["supportPlan","support"],["ifThen","ifThen"]])$(id).value=p[k]??"";
+  for(const [id,k] of [["planName","name"],["startDate","startDate"],["goal","goal"],["reasons","reasons"],["triggersPlan","triggers"],["supportPlan","support"],["ifThen","ifThen"]])$(id).value=p[k]??"";
   if(!$('startDate').value) $('startDate').value=localDateInputValue();
 }
 function showView(name){if(name==="plan" && !$("startDate").value) $("startDate").value=localDateInputValue();document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+name));document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===name));const labels={dashboard:"Overview",cravings:"Craving tracker",emergency:"Urge support",journal:"Journal",insights:"Insights",plan:"Recovery plan",settings:"Settings"};$("pageTitle").textContent=labels[name]||"Overview";$("sidebar").classList.remove("open")}
@@ -109,7 +108,7 @@ $("saveCheckin").addEventListener("click",async()=>{
 $("journalForm").addEventListener("submit",async e=>{e.preventDefault();state.journal.unshift({date:new Date().toISOString(),mood:$("journalMood").value,prompt:$("journalPrompt").value,text:$("journalText").value.trim()});saveState();$("journalText").value="";msg("journalStatus","Reflection saved to your account.")});
 $("planForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  const nextPlan={name:$("planName").value.trim(),startDate:$("startDate").value||localDateInputValue(),dailyCost:Number($("dailyCost").value)||0,goal:$("goal").value.trim(),reasons:$("reasons").value.trim(),triggers:$("triggersPlan").value.trim(),support:$("supportPlan").value.trim(),ifThen:$("ifThen").value.trim()};
+  const nextPlan={name:$("planName").value.trim(),startDate:$("startDate").value||localDateInputValue(),goal:$("goal").value.trim(),reasons:$("reasons").value.trim(),triggers:$("triggersPlan").value.trim(),support:$("supportPlan").value.trim(),ifThen:$("ifThen").value.trim()};
   // Saving or editing a plan never creates a check-in or awards a streak day.
   state.plan=nextPlan;
   saveState();
