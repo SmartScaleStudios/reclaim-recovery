@@ -1,4 +1,4 @@
-const CACHE_NAME = "reclaim-no-accounts-v8";
+const CACHE_NAME = "reclaim-no-accounts-v9";
 const CACHE_PREFIX = "reclaim-no-accounts-";
 const ASSETS = [
   "./",

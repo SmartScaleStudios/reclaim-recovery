@@ -24,8 +24,57 @@ function loadLocal(){
   renderPlan();renderAll()
 }
 function toast(t){const el=$("toast")||document.createElement("div");el.textContent=t;el.className="toast";document.body.append(el);setTimeout(()=>el.remove(),2400)}
-function days(){if(!state.plan.startDate)return 0;return Math.max(0,Math.floor((Date.now()-new Date(state.plan.startDate+"T00:00:00").getTime())/86400000)+1)}
-function renderAll(){const d=days(),p=state.plan;$("streakValue").textContent=d+" "+(d===1?"day":"days");$("streakSub").textContent=p.startDate?"Since "+new Date(p.startDate+"T00:00:00").toLocaleDateString():"Set a recovery start date in your plan.";$("savedValue").textContent=money(Math.max(0,d-1)*(Number(p.dailyCost)||0));$("cravingCount").textContent=state.cravings.length;const next=[1,7,30,90].find(x=>d<x)||"90+";$("milestoneValue").textContent=typeof next==="number"?"Day "+next:next+" days";$("milestoneSub").textContent=typeof next==="number"?Math.max(0,next-d)+" days to next milestone":"Milestone reached";$("ringDays").textContent=d;$("progressRing").style.background=`conic-gradient(var(--green) ${Math.min(100,d/90*100)*3.6}deg,#263932 0deg)`;$("progressHeading").textContent=d?`${d} days of showing up.`:"Your story starts here.";$("progressText").textContent=p.reasons||"Add your reasons in your recovery plan. A lapse does not erase your progress.";[1,7,30,90].forEach(n=>{$("m"+n).textContent=(d>=n?"✓ ":"○ ")+n+" days";});$("whyText").textContent=p.reasons||"Add your reasons in your recovery plan.";
+function dateKey(value){
+  const d = value instanceof Date ? value : new Date(value);
+  if(Number.isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function shiftDateKey(key, amount){
+  const [y,m,d]=key.split("-").map(Number);
+  const date=new Date(y,m-1,d+amount);
+  return dateKey(date);
+}
+function planIsStarted(){
+  const p=state.plan;
+  return Boolean(p.name?.trim() && p.startDate && p.startDate<=dateKey(new Date()));
+}
+function checkedInToday(){
+  const today=dateKey(new Date());
+  return state.checkins.some(c=>dateKey(c.date)===today);
+}
+function days(){
+  if(!planIsStarted()) return 0;
+  const start=state.plan.startDate;
+  const recorded=new Set(state.checkins.map(c=>dateKey(c.date)).filter(k=>k && k>=start));
+  const today=dateKey(new Date());
+  // Until today's deadline passes, yesterday's streak remains available to continue.
+  let cursor=recorded.has(today)?today:shiftDateKey(today,-1);
+  if(!recorded.has(cursor)) return 0;
+  let count=0;
+  while(recorded.has(cursor)){
+    count++;
+    cursor=shiftDateKey(cursor,-1);
+  }
+  return count;
+}
+function updateCheckinAvailability(){
+  const active=planIsStarted();
+  const done=active && checkedInToday();
+  document.querySelectorAll("#moodOptions button").forEach(b=>b.disabled=!active||done);
+  $("checkinNote").disabled=!active||done;
+  $("saveCheckin").disabled=!active||done;
+  const note=$("checkinGateNote");
+  if(note){
+    note.textContent=!active
+      ?"Save a recovery plan with a plan name and start date to unlock daily check-ins."
+      :done
+        ?"Today's check-in is complete. Come back tomorrow to continue your streak."
+        :"Complete one check-in today to maintain your recovery streak.";
+  }
+  if(!active) msg("checkinStatus","Start your recovery plan before checking in.");
+  else if(done) msg("checkinStatus","You've already completed today's check-in.");
+}
+function renderAll(){updateCheckinAvailability();const d=days(),p=state.plan;$("streakValue").textContent=d+" "+(d===1?"day":"days");$("streakSub").textContent=!planIsStarted()?"Start and save your recovery plan to begin.":checkedInToday()?"Today’s check-in is complete.":"Complete today’s check-in to keep your streak going.";$("savedValue").textContent=money(Math.max(0,d-1)*(Number(p.dailyCost)||0));$("cravingCount").textContent=state.cravings.length;const next=[1,7,30,90].find(x=>d<x)||"90+";$("milestoneValue").textContent=typeof next==="number"?"Day "+next:next+" days";$("milestoneSub").textContent=typeof next==="number"?Math.max(0,next-d)+" days to next milestone":"Milestone reached";$("ringDays").textContent=d;$("progressRing").style.background=`conic-gradient(var(--green) ${Math.min(100,d/90*100)*3.6}deg,#263932 0deg)`;$("progressHeading").textContent=d?`${d} consecutive days of showing up.`:"Your story starts here.";$("progressText").textContent=p.reasons||"Add your reasons in your recovery plan. A lapse does not erase your progress.";[1,7,30,90].forEach(n=>{$("m"+n).textContent=(d>=n?"✓ ":"○ ")+n+" days";});$("whyText").textContent=p.reasons||"Add your reasons in your recovery plan.";
 $("cravingList").innerHTML=state.cravings.length?state.cravings.slice(0,40).map(c=>`<div class="entry-item"><b>${esc(c.type)} · ${c.intensity}/10</b><br><small>${new Date(c.date).toLocaleString()} · ${esc(c.trigger)}</small>${c.context?`<p>${esc(c.context)}</p>`:""}${c.response?`<p>Helpful response: ${esc(c.response)}</p>`:""}</div>`).join(""):'<p class="muted">No craving entries yet.</p>';
 $("journalList").innerHTML=state.journal.length?state.journal.slice(0,40).map(j=>`<div class="entry-item"><b>${esc(j.mood)}</b> · <small>${new Date(j.date).toLocaleString()}</small><p>${esc(j.prompt)}<br>${esc(j.text)}</p></div>`).join(""):'<p class="muted">No reflections yet.</p>';
 const list=state.cravings,counts={};list.forEach(c=>counts[c.trigger]=(counts[c.trigger]||0)+1);const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);$("insightTotal").textContent=list.length;$("avgIntensity").textContent=list.length?(list.reduce((a,c)=>a+c.intensity,0)/list.length).toFixed(1):"—";$("topTrigger").textContent=sorted[0]?.[0]||"—";$("triggerBreakdown").innerHTML=sorted.map(([k,v])=>`<p>${esc(k)} — ${v}</p>`).join("")||'<p class="muted">No data yet.</p>';$("intensityChart").innerHTML=list.slice(0,8).reverse().map(c=>`<div class="bar" title="${c.intensity}/10" style="height:${c.intensity*10}%"></div>`).join("")||'<p class="muted">Log cravings to see trends.</p>';
@@ -37,9 +86,27 @@ $("todayLabel").textContent=new Date().toLocaleDateString(undefined,{weekday:"lo
 $("intensity").addEventListener("input",e=>msg("intensityValue",e.target.value+" / 10"));
 $("cravingForm").addEventListener("submit",async e=>{e.preventDefault();state.cravings.unshift({date:new Date().toISOString(),type:$("cravingType").value,intensity:Number($("intensity").value),trigger:$("trigger").value,context:$("cravingContext").value.trim(),response:$("cravingResponse").value.trim()});saveState();e.target.reset();$("intensity").value=5;msg("intensityValue","5 / 10");msg("cravingStatus","Saved to your account.")});
 document.querySelectorAll("#moodOptions button").forEach(b=>b.addEventListener("click",()=>{selectedMood=b.dataset.mood;document.querySelectorAll("#moodOptions button").forEach(x=>x.classList.toggle("selected",x===b))}));
-$("saveCheckin").addEventListener("click",async()=>{if(!selectedMood){msg("checkinStatus","Choose a mood first.");return}state.checkins.unshift({date:new Date().toISOString(),mood:selectedMood,note:$("checkinNote").value.trim()});saveState();$("checkinNote").value="";msg("checkinStatus","Check-in saved to your account.")});
+$("saveCheckin").addEventListener("click",async()=>{
+  if(!planIsStarted()){msg("checkinStatus","Save a recovery plan with a plan name and start date first.");return}
+  if(checkedInToday()){msg("checkinStatus","You've already completed today's check-in.");updateCheckinAvailability();return}
+  if(!selectedMood){msg("checkinStatus","Choose a mood first.");return}
+  state.checkins.unshift({date:new Date().toISOString(),mood:selectedMood,note:$("checkinNote").value.trim()});
+  selectedMood="";
+  document.querySelectorAll("#moodOptions button").forEach(b=>b.classList.remove("selected"));
+  saveState();
+  $("checkinNote").value="";
+  msg("checkinStatus","Check-in saved. Your recovery streak has been updated.");
+  updateCheckinAvailability();
+});
 $("journalForm").addEventListener("submit",async e=>{e.preventDefault();state.journal.unshift({date:new Date().toISOString(),mood:$("journalMood").value,prompt:$("journalPrompt").value,text:$("journalText").value.trim()});saveState();$("journalText").value="";msg("journalStatus","Reflection saved to your account.")});
-$("planForm").addEventListener("submit",async e=>{e.preventDefault();state.plan={name:$("planName").value.trim(),startDate:$("startDate").value,dailyCost:Number($("dailyCost").value)||0,goal:$("goal").value.trim(),reasons:$("reasons").value.trim(),triggers:$("triggersPlan").value.trim(),support:$("supportPlan").value.trim(),ifThen:$("ifThen").value.trim()};saveState();msg("planStatus","Recovery plan saved to your account.")});
+$("planForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  state.plan={name:$("planName").value.trim(),startDate:$("startDate").value,dailyCost:Number($("dailyCost").value)||0,goal:$("goal").value.trim(),reasons:$("reasons").value.trim(),triggers:$("triggersPlan").value.trim(),support:$("supportPlan").value.trim(),ifThen:$("ifThen").value.trim()};
+  saveState();
+  msg("planStatus",planIsStarted()
+    ?"Recovery plan saved. Daily check-ins are now available."
+    :"Recovery plan saved. Add a plan name and a start date of today or earlier to unlock daily check-ins.");
+});
 document.querySelectorAll(".action-option").forEach(b=>b.addEventListener("click",()=>b.classList.toggle("chosen")));
 $("breathStart").addEventListener("click",()=>{if(breathTimer)clearInterval(breathTimer);let n=60;$("breathStart").disabled=true;breathTimer=setInterval(()=>{n--;const phase=(60-n)%10;$("breathCircle").textContent=phase<4?"Breathe in":"Breathe out";$("breathCircle").className="breath-circle "+(phase<4?"inhale":"exhale");$("breathTimer").textContent="00:"+String(n).padStart(2,"0");if(n<=0){clearInterval(breathTimer);breathTimer=null;$("breathCircle").textContent="Well done";$("breathStart").disabled=false;$("breathStart").textContent="Start again"}},1000)});
 $("exportBtn").addEventListener("click",()=>{const a=document.createElement("a"),u=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:"application/json"}));a.href=u;a.download="reclaim-backup.json";a.click();URL.revokeObjectURL(u)});
