@@ -1,15 +1,13 @@
-# RECLAIM service-worker updates
+# RECLAIM automatic updates (v10)
 
-This release updates the service worker automatically. It uses a versioned cache,
-activates the new worker without manual unregistration, and removes only older
-RECLAIM caches. Recovery data remains in localStorage and is not cleared.
+- Each release uses a new cache version in `sw.js`.
+- The service worker installs the new app files, calls `skipWaiting()`, removes older RECLAIM caches, and claims open clients.
+- The app checks for updates at launch and when the page becomes visible, focused, or restored from the back-forward cache.
+- When an already-installed app receives a new controller, it reloads once to use the new files.
+- Recovery data stays in `localStorage`; cache cleanup does not clear it.
 
-For future releases:
-1. Change CACHE_NAME in sw.js to a new version (for example v9).
-2. Keep CACHE_PREFIX as reclaim-no-accounts-.
-3. Upload the updated files to the same GitHub Pages publishing folder.
-4. Open or refresh RECLAIM. Chrome checks for the updated worker and installs it.
-5. The new worker activates and cleans up the previous RECLAIM cache.
+## Important platform limitation
 
-Do not use Chrome's Clear site data for routine updates. A normal refresh may be
-needed after a deployment to load the newly activated app in an already-open tab.
+A static GitHub Pages PWA cannot force a browser to download and run new code while the app is fully closed. The browser checks on its own schedule and when the app is next opened/resumed. On supported browsers, v10 automatically checks and applies updates on resume without asking the user to download files, unregister a service worker, or press an update button.
+
+For future releases, increment `CACHE_NAME` (for example, `reclaim-no-accounts-v11`) and upload the updated files to the same GitHub Pages publishing folder. Do not clear site data during routine updates.

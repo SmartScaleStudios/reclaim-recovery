@@ -1,4 +1,4 @@
-const CACHE_NAME = "reclaim-no-accounts-v9";
+const CACHE_NAME = "reclaim-no-accounts-v10";
 const CACHE_PREFIX = "reclaim-no-accounts-";
 const ASSETS = [
   "./",
@@ -45,14 +45,14 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== scopeUrl.origin || !url.href.startsWith(scopeUrl.href)) return;
 
   event.respondWith((async () => {
-    const cached = await caches.match(request);
+    const currentCache = await caches.open(CACHE_NAME);
+    const cached = await currentCache.match(request);
     if (cached) return cached;
 
     try {
       const response = await fetch(request);
       if (response && response.ok) {
-        const cache = await caches.open(CACHE_NAME);
-        await cache.put(request, response.clone());
+        await currentCache.put(request, response.clone());
       }
       return response;
     } catch (error) {

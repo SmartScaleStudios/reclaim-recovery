@@ -79,8 +79,16 @@ $("cravingList").innerHTML=state.cravings.length?state.cravings.slice(0,40).map(
 $("journalList").innerHTML=state.journal.length?state.journal.slice(0,40).map(j=>`<div class="entry-item"><b>${esc(j.mood)}</b> · <small>${new Date(j.date).toLocaleString()}</small><p>${esc(j.prompt)}<br>${esc(j.text)}</p></div>`).join(""):'<p class="muted">No reflections yet.</p>';
 const list=state.cravings,counts={};list.forEach(c=>counts[c.trigger]=(counts[c.trigger]||0)+1);const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);$("insightTotal").textContent=list.length;$("avgIntensity").textContent=list.length?(list.reduce((a,c)=>a+c.intensity,0)/list.length).toFixed(1):"—";$("topTrigger").textContent=sorted[0]?.[0]||"—";$("triggerBreakdown").innerHTML=sorted.map(([k,v])=>`<p>${esc(k)} — ${v}</p>`).join("")||'<p class="muted">No data yet.</p>';$("intensityChart").innerHTML=list.slice(0,8).reverse().map(c=>`<div class="bar" title="${c.intensity}/10" style="height:${c.intensity*10}%"></div>`).join("")||'<p class="muted">Log cravings to see trends.</p>';
 }
-function renderPlan(){const p=state.plan;for(const [id,k] of [["planName","name"],["startDate","startDate"],["dailyCost","dailyCost"],["goal","goal"],["reasons","reasons"],["triggersPlan","triggers"],["supportPlan","support"],["ifThen","ifThen"]])$(id).value=p[k]??""}
-function showView(name){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+name));document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===name));const labels={dashboard:"Overview",cravings:"Craving tracker",emergency:"Urge support",journal:"Journal",insights:"Insights",plan:"Recovery plan",settings:"Settings"};$("pageTitle").textContent=labels[name]||"Overview";$("sidebar").classList.remove("open")}
+function localDateInputValue(){
+  const now=new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+}
+function renderPlan(){
+  const p=state.plan;
+  for(const [id,k] of [["planName","name"],["startDate","startDate"],["dailyCost","dailyCost"],["goal","goal"],["reasons","reasons"],["triggersPlan","triggers"],["supportPlan","support"],["ifThen","ifThen"]])$(id).value=p[k]??"";
+  if(!$('startDate').value) $('startDate').value=localDateInputValue();
+}
+function showView(name){if(name==="plan" && !$("startDate").value) $("startDate").value=localDateInputValue();document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+name));document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===name));const labels={dashboard:"Overview",cravings:"Craving tracker",emergency:"Urge support",journal:"Journal",insights:"Insights",plan:"Recovery plan",settings:"Settings"};$("pageTitle").textContent=labels[name]||"Overview";$("sidebar").classList.remove("open")}
 document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.go)));$("menuBtn").addEventListener("click",()=>$("sidebar").classList.toggle("open"));
 $("todayLabel").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"}).toUpperCase();
 $("intensity").addEventListener("input",e=>msg("intensityValue",e.target.value+" / 10"));
@@ -101,7 +109,9 @@ $("saveCheckin").addEventListener("click",async()=>{
 $("journalForm").addEventListener("submit",async e=>{e.preventDefault();state.journal.unshift({date:new Date().toISOString(),mood:$("journalMood").value,prompt:$("journalPrompt").value,text:$("journalText").value.trim()});saveState();$("journalText").value="";msg("journalStatus","Reflection saved to your account.")});
 $("planForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  state.plan={name:$("planName").value.trim(),startDate:$("startDate").value,dailyCost:Number($("dailyCost").value)||0,goal:$("goal").value.trim(),reasons:$("reasons").value.trim(),triggers:$("triggersPlan").value.trim(),support:$("supportPlan").value.trim(),ifThen:$("ifThen").value.trim()};
+  const nextPlan={name:$("planName").value.trim(),startDate:$("startDate").value||localDateInputValue(),dailyCost:Number($("dailyCost").value)||0,goal:$("goal").value.trim(),reasons:$("reasons").value.trim(),triggers:$("triggersPlan").value.trim(),support:$("supportPlan").value.trim(),ifThen:$("ifThen").value.trim()};
+  // Saving or editing a plan never creates a check-in or awards a streak day.
+  state.plan=nextPlan;
   saveState();
   msg("planStatus",planIsStarted()
     ?"Recovery plan saved. Daily check-ins are now available."
@@ -136,13 +146,33 @@ $("clearBtn").addEventListener("click",async()=>{if(confirm("Delete all recovery
 
 loadLocal();
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  const hadControllerAtLoad = Boolean(navigator.serviceWorker.controller);
+  let reloadedForUpdate = false;
+
+  // When an updated worker takes control, reload once so the new app files are used.
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (hadControllerAtLoad && !reloadedForUpdate) {
+      reloadedForUpdate = true;
+      window.location.reload();
+    }
+  });
+
   window.addEventListener("load", async () => {
     try {
       const registration = await navigator.serviceWorker.register("./sw.js", {
         updateViaCache: "none"
       });
-      // Ask Chrome to check the service-worker script for a newer release.
       await registration.update();
+
+      // Phone browsers often suspend PWAs. Check again whenever the app is resumed.
+      const checkForUpdate = () => {
+        if (document.visibilityState === "visible") {
+          registration.update().catch(error => console.warn("RECLAIM update check:", error));
+        }
+      };
+      document.addEventListener("visibilitychange", checkForUpdate);
+      window.addEventListener("focus", checkForUpdate);
+      window.addEventListener("pageshow", checkForUpdate);
     } catch (error) {
       console.warn("RECLAIM offline update check failed:", error);
     }
