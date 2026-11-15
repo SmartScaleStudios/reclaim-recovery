@@ -2,7 +2,7 @@ self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
-const CACHE_NAME = "reclaim-no-accounts-v12";
+const CACHE_NAME = "reclaim-no-accounts-v13";
 const CACHE_PREFIX = "reclaim-no-accounts-";
 const ASSETS = [
   "./",

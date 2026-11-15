@@ -11,7 +11,7 @@ On iPhone, open the Home Screen app and tap **Check for updates**. If Safari/iOS
 
 ## For the person publishing a release
 1. Upload the new app files to the same GitHub Pages publishing folder.
-2. Every release must increment `CACHE_NAME` in `sw.js` (for example v12 to v12).
+2. Every release must increment `CACHE_NAME` in `sw.js` (for example v13 to v13).
 3. Commit and wait for GitHub Pages to publish.
 4. Users can tap **Check for updates** in the app. They do not need to delete and reinstall the Home Screen app.
 
