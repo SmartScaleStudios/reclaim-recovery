@@ -1,13 +1,19 @@
-# RECLAIM automatic updates (v10)
+# RECLAIM app updates
 
-- Each release uses a new cache version in `sw.js`.
-- The service worker installs the new app files, calls `skipWaiting()`, removes older RECLAIM caches, and claims open clients.
-- The app checks for updates at launch and when the page becomes visible, focused, or restored from the back-forward cache.
-- When an already-installed app receives a new controller, it reloads once to use the new files.
-- Recovery data stays in `localStorage`; cache cleanup does not clear it.
+## For the person using RECLAIM
+- Open RECLAIM while connected to the internet.
+- Tap **Check for updates** in the top header.
+- RECLAIM asks the browser to check GitHub Pages for a new service worker.
+- If a new release is available, the new worker installs, activates, and the app reloads.
+- If no update is available, the app reports that it is up to date and refreshes the current page.
 
-## Important platform limitation
+On iPhone, open the Home Screen app and tap **Check for updates**. If Safari/iOS has suspended the app, reopening it first gives the browser a chance to resume service-worker checks.
 
-A static GitHub Pages PWA cannot force a browser to download and run new code while the app is fully closed. The browser checks on its own schedule and when the app is next opened/resumed. On supported browsers, v10 automatically checks and applies updates on resume without asking the user to download files, unregister a service worker, or press an update button.
+## For the person publishing a release
+1. Upload the new app files to the same GitHub Pages publishing folder.
+2. Every release must increment `CACHE_NAME` in `sw.js` (for example v11 to v12).
+3. Commit and wait for GitHub Pages to publish.
+4. Users can tap **Check for updates** in the app. They do not need to delete and reinstall the Home Screen app.
 
-For future releases, increment `CACHE_NAME` (for example, `reclaim-no-accounts-v11`) and upload the updated files to the same GitHub Pages publishing folder. Do not clear site data during routine updates.
+## Important
+A static GitHub Pages PWA cannot install an update while iOS has fully suspended or closed the app. The manual button triggers the check when the app is open. It does not clear localStorage, and it does not remove the Home Screen installation. Recovery data remains in the existing localStorage key.

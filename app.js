@@ -145,36 +145,116 @@ $("clearBtn").addEventListener("click",async()=>{if(confirm("Delete all recovery
 })();
 
 loadLocal();
+
+let reclaimSwRegistration = null;
+let updateReloadStarted = false;
+let updateCheckBusy = false;
+
+function updateStatus(message) {
+  const status = $("updateStatus");
+  if (status) status.textContent = message;
+}
+
+function reloadAfterServiceWorkerTakesControl() {
+  if (updateReloadStarted) return;
+  updateReloadStarted = true;
+  updateStatus("Update installed. Reloading RECLAIM…");
+  window.setTimeout(() => window.location.reload(), 250);
+}
+
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   const hadControllerAtLoad = Boolean(navigator.serviceWorker.controller);
-  let reloadedForUpdate = false;
 
-  // When an updated worker takes control, reload once so the new app files are used.
   navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (hadControllerAtLoad && !reloadedForUpdate) {
-      reloadedForUpdate = true;
-      window.location.reload();
-    }
+    // Reload only when this page already had an older worker controlling it.
+    if (hadControllerAtLoad) reloadAfterServiceWorkerTakesControl();
   });
+
+  async function checkForReclaimUpdate(manual = false) {
+    if (updateCheckBusy) return;
+    updateCheckBusy = true;
+    const button = $("checkUpdatesBtn");
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Checking…";
+    }
+    updateStatus("Checking for a newer version…");
+
+    try {
+      if (!reclaimSwRegistration) {
+        reclaimSwRegistration = await navigator.serviceWorker.getRegistration("./");
+        if (!reclaimSwRegistration) {
+          reclaimSwRegistration = await navigator.serviceWorker.register("./sw.js", {
+            updateViaCache: "none"
+          });
+        }
+      }
+
+      const registration = reclaimSwRegistration;
+      const hadInstallingWorker = Boolean(registration.installing);
+      await registration.update();
+
+      // If an update is already waiting, ask it to activate immediately.
+      if (registration.waiting) {
+        updateStatus("A new version is ready. Installing it…");
+        registration.waiting.postMessage({ type: "SKIP_WAITING" });
+        return;
+      }
+
+      // Wait briefly for an update that was discovered by this check.
+      const installing = registration.installing;
+      if (installing) {
+        updateStatus("A new version was found. Installing it…");
+        installing.addEventListener("statechange", () => {
+          if (installing.state === "activated") {
+            if (hadControllerAtLoad) reloadAfterServiceWorkerTakesControl();
+            else updateStatus("RECLAIM is updated. You’re ready to go.");
+          } else if (installing.state === "redundant") {
+            updateStatus("Update check finished. Please try again.");
+          }
+        });
+        return;
+      }
+
+      if (manual) {
+        updateStatus("You’re using the latest version. Refreshing RECLAIM…");
+        // Refresh the current page too; the active worker serves its current cache.
+        window.setTimeout(() => window.location.reload(), 500);
+      } else {
+        updateStatus("RECLAIM is up to date.");
+      }
+    } catch (error) {
+      console.warn("RECLAIM update check failed:", error);
+      updateStatus("Couldn’t check for updates. Check your connection and try again.");
+    } finally {
+      updateCheckBusy = false;
+      if (button) {
+        button.disabled = false;
+        button.textContent = "↻ Check for updates";
+      }
+    }
+  }
 
   window.addEventListener("load", async () => {
     try {
-      const registration = await navigator.serviceWorker.register("./sw.js", {
+      reclaimSwRegistration = await navigator.serviceWorker.register("./sw.js", {
         updateViaCache: "none"
       });
-      await registration.update();
 
-      // Phone browsers often suspend PWAs. Check again whenever the app is resumed.
-      const checkForUpdate = () => {
-        if (document.visibilityState === "visible") {
-          registration.update().catch(error => console.warn("RECLAIM update check:", error));
-        }
-      };
-      document.addEventListener("visibilitychange", checkForUpdate);
-      window.addEventListener("focus", checkForUpdate);
-      window.addEventListener("pageshow", checkForUpdate);
+      // The app checks automatically when opened, and again when resumed.
+      await checkForReclaimUpdate(false);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") checkForReclaimUpdate(false);
+      });
+      window.addEventListener("focus", () => checkForReclaimUpdate(false));
+      window.addEventListener("pageshow", () => checkForReclaimUpdate(false));
     } catch (error) {
-      console.warn("RECLAIM offline update check failed:", error);
+      console.warn("RECLAIM service worker registration failed:", error);
+      updateStatus("Offline updates are unavailable in this browser session.");
     }
   });
+
+  $("checkUpdatesBtn")?.addEventListener("click", () => checkForReclaimUpdate(true));
+} else {
+  updateStatus("App updates require a supported browser connection.");
 }
